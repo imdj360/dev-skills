@@ -1,0 +1,3 @@
+tools/*/nupkg/
+tools/*/bin/
+tools/*/obj/
