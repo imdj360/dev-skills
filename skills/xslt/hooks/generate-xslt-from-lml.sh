@@ -8,8 +8,6 @@
 
 set -euo pipefail
 
-TOOL_PROJECT="/Users/danieljonathan/Workspace/LearnDJ/LABlog/LaMapper/Datamapperws/Tools/lml-compile/lml-compile.csproj"
-
 # --- Extract file path from stdin ---
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
@@ -29,7 +27,7 @@ mkdir -p "$MAPS_DIR"
 
 # --- Compile via lml-compile tool ---
 set +e
-OUTPUT=$(dotnet run --project "$TOOL_PROJECT" -c Release -- "$FILE_PATH" "$OUT_XSLT" 2>&1)
+OUTPUT=$(lml-compile "$FILE_PATH" "$OUT_XSLT" 2>&1)
 EXIT_CODE=$?
 set -e
 

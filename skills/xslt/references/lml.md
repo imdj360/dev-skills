@@ -721,12 +721,20 @@ var result = await executor.RunMapAsync(xslt, inputXmlBytes);
 var xml = Encoding.UTF8.GetString(Convert.FromBase64String(result["$content"].Value<string>()));
 ```
 
-A standalone `lml-compile` CLI tool in `Tools/lml-compile/` wraps this for hook use:
+A standalone `lml-compile` CLI tool in `Tools/lml-compile/` wraps this for hook use.
+Install once as a global .NET tool:
 ```bash
-dotnet run --project Tools/lml-compile/lml-compile.csproj -- \
-  Artifacts/MapDefinitions/MyMap.lml \
-  Artifacts/Maps/MyMap.xslt
+cd Tools/lml-compile
+dotnet pack -c Release -o ./nupkg
+dotnet tool install -g lml-compile --add-source ./nupkg
 ```
+
+Then compile any map directly (no project path needed):
+```bash
+lml-compile Artifacts/MapDefinitions/MyMap.lml Artifacts/Maps/MyMap.xslt
+```
+
+To update after changes: `dotnet tool update -g lml-compile --add-source ./nupkg`
 
 ### Compile via design-time REST API (requires running host)
 ```
@@ -832,13 +840,14 @@ which matches the same `Write|Edit` matcher.
 **Trigger:** any `Write|Edit` on a `*.lml` file
 **What it does:**
 - Reads the file path from the hook JSON stdin
-- Calls `dotnet run --project Tools/lml-compile/lml-compile.csproj -- <input.lml> <output.xslt>`
+- Calls `lml-compile <input.lml> <output.xslt>` (installed as a global .NET tool)
 - Uses `DataMapTestExecutor.GenerateXslt()` from the SDK — **no running host required**
 - Writes compiled XSLT to `Artifacts/Maps/<basename>.xslt`
 - Returns `systemMessage` with success or error
 
 **The `lml-compile` tool** is at `Tools/lml-compile/` — a .NET 8 console project using
-`Microsoft.Azure.Workflows.WebJobs.Tests.Extension` v1.0.1.
+`Microsoft.Azure.Workflows.WebJobs.Tests.Extension` v1.0.1. Install globally with
+`dotnet tool install -g lml-compile --add-source Tools/lml-compile/nupkg`.
 
 ### Hook 2 — XSLT transform (`run-xslt-after-edit.sh`)
 
@@ -911,7 +920,7 @@ the old Data Mapper extension installed, remove it to avoid conflicts.
 | `XSLT Debugger not running` | Port file missing | Open a `.xslt` file in VS Code to start extension |
 | `No launch.json config found` | XSLT has no matching debug config | Add config to `.vscode/launch.json` |
 | `LML compile failed: ...` | Syntax error in LML | Read error, fix LML, re-save |
-| Hook fires but no XSLT written | Host not needed — SDK used | Check `lml-compile` build is up to date |
+| Hook fires but no XSLT written | `lml-compile` not on PATH | Run `dotnet tool install -g lml-compile --add-source Tools/lml-compile/nupkg` |
 | `Connection refused` (old hook) | Old REST API hook path — replaced by SDK | Use current `generate-xslt-from-lml.sh` |
 
 ---

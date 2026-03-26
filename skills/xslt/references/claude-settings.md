@@ -42,4 +42,21 @@ Replace `<PROJECT_ROOT>` with the absolute path to your project's `.claude/hooks
 ## Prerequisites
 
 - **`run-xslt-after-edit.sh`** — requires the XSLT Debugger VS Code extension running with HTTP API enabled (port written to `~/.xslt-debugger-port`)
-- **`generate-xslt-from-lml.sh`** — requires the `lml-compile` dotnet tool project; update `TOOL_PROJECT` path inside the script to point to your local build
+- **`generate-xslt-from-lml.sh`** — requires the `lml-compile` dotnet global tool. Install it once from the nupkg included in this repo:
+
+  ```bash
+  dotnet tool install --global lml-compile --add-source tools/lml-compile/nupkg
+  ```
+
+  Or install from source:
+
+  ```bash
+  dotnet pack tools/lml-compile/lml-compile.csproj -c Release -o tools/lml-compile/nupkg
+  dotnet tool install --global lml-compile --add-source tools/lml-compile/nupkg
+  ```
+
+  Verify:
+
+  ```bash
+  lml-compile --help
+  ```
