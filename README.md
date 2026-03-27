@@ -23,7 +23,7 @@ Expert XSLT authoring, debugging, migration, and platform-compatibility skill fo
 - XSLT 1.0 (including `msxsl:script` inline C#), 2.0, and 3.0 / SaxonCS
 - BizTalk / XslCompiledTransform, Logic Apps Transform XML, Saxon / SaxonCS
 - Generate, Debug, Migrate, Compatibility, and LML (Logic Apps Data Mapper) modes
-- Ready-to-debug output bundles with launch.json for the XSLT Debugger VS Code extension
+- Ready-to-debug output bundles with `launch.json` for the [XSLT Debugger](https://marketplace.visualstudio.com/items?itemName=danieljonathan.xsltdebugger-windows) VS Code extension
 
 **Hooks:**
 - `generate-xslt-from-lml.sh` — auto-compiles `.lml` files to `.xslt` on save
@@ -37,3 +37,11 @@ Expert XSLT authoring, debugging, migration, and platform-compatibility skill fo
   ```bash
   dotnet tool install --global lml-compile --add-source tools/lml-compile/nupkg
   ```
+
+## Contributing
+
+Contributions are welcome. Please submit changes via pull request — direct pushes to `main` are not permitted.
+
+1. Fork the repo or create a branch
+2. Make your changes
+3. Open a pull request against `main`
