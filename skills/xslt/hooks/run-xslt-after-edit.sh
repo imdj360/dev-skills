@@ -1,12 +1,13 @@
 #!/bin/bash
-# Hook: after Edit on .xslt files, auto-run the transform using launch.json config
-# Reads the edited file path from stdin (PostToolUse JSON), looks up the matching
-# launch.json entry, and calls the XSLT Debugger HTTP API.
+# Hook: after Write|Edit on .xslt files, auto-run the transform via the
+# XSLT Debugger extension's HTTP API. The extension activates on
+# onStartupFinished — the port file exists as soon as VS Code loads.
+#
+# Portable: derives workspace by walking up from the edited file to find
+# .vscode/launch.json. No hardcoded paths.
 
 set -euo pipefail
 
-WORKSPACE="$(pwd)"
-LAUNCH_JSON="$WORKSPACE/.vscode/launch.json"
 PORT_FILE="$HOME/.xslt-debugger-port"
 
 # Read hook input from stdin
@@ -16,11 +17,42 @@ EDITED_FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 # Only trigger for .xslt files
 [[ "$EDITED_FILE" == *.xslt ]] || exit 0
 
-# Check debugger is running
-[[ -f "$PORT_FILE" ]] || { echo '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"XSLT Debugger not running (no port file). Start the extension to enable auto-transform."}}'; exit 0; }
+# --- Derive workspace by walking up from the file to find .vscode/launch.json ---
+DIR="$(cd "$(dirname "$EDITED_FILE")" && pwd)"
+WORKSPACE=""
+while [[ "$DIR" != "/" ]]; do
+  if [[ -f "$DIR/.vscode/launch.json" ]]; then
+    WORKSPACE="$DIR"
+    break
+  fi
+  DIR="$(dirname "$DIR")"
+done
+
+if [[ -z "$WORKSPACE" ]]; then
+  jq -n --arg f "$EDITED_FILE" '{
+    "hookSpecificOutput": {
+      "hookEventName": "PostToolUse",
+      "additionalContext": ("No .vscode/launch.json found above: " + $f)
+    }
+  }'
+  exit 0
+fi
+
+LAUNCH_JSON="$WORKSPACE/.vscode/launch.json"
+
+# Port file must exist — extension activates on startup
+if [[ ! -f "$PORT_FILE" ]]; then
+  jq -n '{
+    "hookSpecificOutput": {
+      "hookEventName": "PostToolUse",
+      "additionalContext": "XSLT Debugger not running (no port file). Open VS Code with this workspace — the extension activates on startup."
+    }
+  }'
+  exit 0
+fi
 PORT=$(cat "$PORT_FILE")
 
-# Use jq to find the FIRST matching launch config
+# Find matching launch.json config
 CONFIG=$(jq -r --arg file "$EDITED_FILE" --arg ws "$WORKSPACE" '
   [.configurations[] |
    select(.type == "xslt") |
@@ -35,7 +67,12 @@ CONFIG=$(jq -r --arg file "$EDITED_FILE" --arg ws "$WORKSPACE" '
 ' "$LAUNCH_JSON")
 
 if [[ -z "$CONFIG" || "$CONFIG" == "null" ]]; then
-  echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"No launch.json config found for: $EDITED_FILE\"}}"
+  jq -n --arg f "$EDITED_FILE" '{
+    "hookSpecificOutput": {
+      "hookEventName": "PostToolUse",
+      "additionalContext": ("No launch.json config found for: " + $f)
+    }
+  }'
   exit 0
 fi
 
@@ -48,7 +85,7 @@ RESULT=$(curl -s -X POST "http://127.0.0.1:$PORT/run-transform" \
   -d "{\"stylesheet\": \"$STYLESHEET\", \"xml\": \"$XML\", \"engine\": \"$ENGINE\"}" 2>&1) || true
 
 # Filter out trace lines, keep output concise
-OUTPUT=$(echo "$RESULT" | grep -v '^\[trace\]' | head -40)
+OUTPUT=$(echo "$RESULT" | grep -v '^\[trace\]' | head -40 || true)
 
 # Return as hook JSON so Claude sees the transform result
 jq -n --arg ctx "$OUTPUT" --arg name "$(basename "$STYLESHEET")" --arg engine "$ENGINE" '{

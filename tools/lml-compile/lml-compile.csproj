@@ -7,11 +7,20 @@
     <AssemblyName>lml-compile</AssemblyName>
     <RootNamespace>LmlCompile</RootNamespace>
     <PackageId>lml-compile</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>lml-compile</ToolCommandName>
+    <Authors>imdj360</Authors>
+    <Description>Dotnet global tool that compiles Logic Apps Data Mapper (.lml) files to XSLT. Used by the xslt skill hooks for Claude Code to auto-compile LML on save.</Description>
+    <PackageTags>logic-apps;lml;xslt;data-mapper;azure;claude-code;dotnet-tool</PackageTags>
+    <RepositoryUrl>https://github.com/imdj360/dev-skills</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/imdj360/dev-skills</PackageProjectUrl>
+    <Copyright>Copyright © 2026 imdj360</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Workflows.WebJobs.Tests.Extension" Version="1.0.1"/>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>

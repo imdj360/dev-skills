@@ -454,6 +454,33 @@ Use XSD type names:
 | `xs:boolean` | True/false |
 | `xs:anyAtomicType` | Any atomic value |
 
+### Known SDK bug: zero-parameter functions
+
+**Every custom function must have at least one `<param>`.** The SDK's
+`ReadCustomFunctionsDefinitionAsync` deserializes the `<param>` array as null (not empty)
+when no `<param>` elements are present, then calls `.Length` on null —
+`NullReferenceException`. The exception is caught silently, so the **entire XML file** is
+skipped without any error message. All other functions in that same file become invisible
+to the compiler.
+
+**Workaround:** add a dummy parameter that the function body ignores:
+
+```xml
+<!-- WRONG: zero params → crashes the SDK, kills the whole file -->
+<function name="todayDate" as="xs:string" description="Today as yyyy-MM-dd.">
+  <value-of select="format-date(current-date(), '[Y0001]-[M01]-[D01]')"/>
+</function>
+
+<!-- RIGHT: dummy param keeps the SDK happy -->
+<function name="todayDate" as="xs:string" description="Today as yyyy-MM-dd. Pass any value (ignored).">
+  <param name="_unused" as="xs:string"/>
+  <value-of select="format-date(current-date(), '[Y0001]-[M01]-[D01]')"/>
+</function>
+```
+
+Or better: use `current-date()` directly in LML for zero-arg expressions instead of wrapping
+them in a custom function.
+
 ### Complete examples
 
 **Simple function -- single expression:**
